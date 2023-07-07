@@ -10,14 +10,14 @@ import Security
 
 public final class Keychain {
 	private typealias QueryDictionary = [CFString: Any]
-	
+
 	public static let defaultItemClass = kSecClassGenericPassword as String
+	//	public static let defaultStringEncoding: String.Encoding = .utf8
 
 	public let accessGroup: String
 	// public var applicationTagPrefix: String?
 
 	private let baseQuery: QueryDictionary
-	private let textEncoding: String.Encoding = .utf8
 
 	// MARK: - init
 
@@ -34,63 +34,95 @@ public final class Keychain {
 		]
 	}
 
-	// MARK: - Public functions
+	// MARK: - Public
 
-	/// Stores provided content in keychain under specified service URL.
+	// MARK: Save*
+
+	/// Stores provided data in the keychain under specified key.
 	/// - Parameters:
-	///   - content: Content to store
-	///   - url: Service URL
+	///   - data: Data to store
+	///   - key: Item key
 	///   - itemDescription: Keychain item description
 	///   - itemClass: Keychain item class
-	public func saveContent(_ content: String,
-							for url: URL,
-							itemDescription: String? = nil,
-							itemClass: String = kSecClassGenericPassword as String) throws {
+	public func setData(
+		_ data: Data,
+		for key: String,
+		itemDescription: String? = nil,
+		itemClass: String = kSecClassGenericPassword as String
+	) throws {
 		var query = baseQuery
-		// query[kSecAttrServer] = url.absoluteString
-		query[kSecAttrService] = url.absoluteString
+		query[kSecClass] = itemClass
+		query[kSecAttrService] = key
+		query[kSecAttrLabel] = key
+		query[kSecAttrDescription] = itemDescription
 
-		guard let tokenData = content.data(using: self.textEncoding) else {
-			throw KeychainError.encodingFailed
-		}
 		let attributes: QueryDictionary = [
-			kSecValueData: tokenData,
-			// kSecAttrComment: comment as Any,
-			// kSecAttrPath: url.path,
-			kSecAttrLabel: url.absoluteString,
-			kSecAttrDescription: itemDescription as Any,
-			kSecClass: itemClass,
-			// kSecAttrApplicationTag: applicationTag(for: url)
+			kSecValueData: data,
+//			kSecAttrLabel: key,
 		]
 
 		try addOrUpdate(query: query, attributes: attributes)
 	}
 
-	/// Retrieves content for specified service URL..
+	/// Stores provided string in the keychain under specified key.
 	/// - Parameters:
-	///   - url: Service URL
+	///   - string: String to store
+	///   - key: Item key
+	///   - itemDescription: Keychain item description
 	///   - itemClass: Keychain item class
-	/// - Returns: Saved content
-	public func getContent(for url: URL, itemClass: String = Keychain.defaultItemClass) throws -> String {
+	@inlinable
+	public func setString(
+		_ string: String,
+		for key: String,
+		itemDescription: String? = nil,
+		itemClass: String = kSecClassGenericPassword as String
+	) throws {
+		guard let data = string.data(using: .utf8) else {
+			throw KeychainError.encodingFailed
+		}
+		try setData(data, for: key, itemDescription: itemDescription, itemClass: itemClass)
+	}
+
+	// MARK: Get*
+
+	/// Retrieves data for specified item key.
+	/// - Parameters:
+	///   - key: Item key
+	///   - itemClass: Keychain item class
+	/// - Returns: Saved data
+	public func getData(for key: String, itemClass: String = Keychain.defaultItemClass) throws -> Data {
 		var query = baseQuery
-		// query[kSecAttrServer] = url.absoluteString
-		query[kSecAttrService] = url.absoluteString
+		query[kSecClass] = itemClass
+		query[kSecAttrService] = key
+//		query[kSecAttrLabel] = key
 		query[kSecMatchLimit] = kSecMatchLimitOne
 		query[kSecReturnData] = true
-		query[kSecClass] = itemClass
 
-		var item: CFTypeRef?
-		let status = SecItemCopyMatching(query as CFDictionary, &item)
+		var _data: CFTypeRef?
+		let status = SecItemCopyMatching(query as CFDictionary, &_data)
 		guard status == errSecSuccess else {
 			throw SecError(status)
 		}
 
-		guard let data = item as? Data,
-			  let password = String(data: data, encoding: self.textEncoding) else {
+		guard let data = _data as? Data else {
 			throw KeychainError.decodingFailed
 		}
 
-		return password
+		return data
+	}
+
+	/// Retrieves data for specified item key.
+	/// - Parameters:
+	///   - key: Item key
+	///   - itemClass: Keychain item class
+	/// - Returns: Saved string
+	@inlinable
+	public func getString(for key: String, itemClass: String = Keychain.defaultItemClass) throws -> String {
+		let data = try getData(for: key, itemClass: itemClass)
+		guard let string = String(data: data, encoding: .utf8) else {
+			throw KeychainError.decodingFailed
+		}
+		return string
 	}
 
 	/// Deletes content for supplied service URL.
@@ -99,9 +131,9 @@ public final class Keychain {
 	///   - itemClass: Keychain item class
 	public func removeContent(for url: URL, itemClass: String = Keychain.defaultItemClass) throws {
 		var query = baseQuery
-		// query[kSecAttrServer] = url.absoluteString
+//		query[kSecAttrServer] = url.absoluteString
 		query[kSecAttrService] = url.absoluteString
-		// query[kSecAttrApplicationTag] = applicationTag(for: url)
+//		query[kSecAttrApplicationTag] = applicationTag(for: url)
 		query[kSecClass] = itemClass
 
 		let status = SecItemDelete(query as CFDictionary)
@@ -135,9 +167,11 @@ public final class Keychain {
 
 		return urls
 	}
+}
 
-	// MARK: - Helpers
+// MARK: - Keychain+Private
 
+private extension Keychain {
 	/// Adds or updates item with supplied query and attributes,
 	/// - Parameters:
 	///   - query: Item query
@@ -158,16 +192,4 @@ public final class Keychain {
 			throw SecError(addStatus)
 		}
 	}
-	
-	/*
-	/// Generates item tag for specified URL.
-	/// - Parameter url: Item service URL
-	/// - Returns: Item tag
-	private func applicationTag(for url: URL) -> String {
-		if let applicationTagPrefix {
-			return "\(applicationTagPrefix).\(url.absoluteString)"
-		}
-		return url.absoluteString
-	}
-	*/
 }
