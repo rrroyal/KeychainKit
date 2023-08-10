@@ -127,12 +127,12 @@ public final class Keychain {
 
 	/// Deletes content for supplied service URL.
 	/// - Parameters:
-	///   - url: Service URL
+	///   - url: Item key
 	///   - itemClass: Keychain item class
-	public func removeContent(for url: URL, itemClass: String = Keychain.defaultItemClass) throws {
+	public func removeContent(for key: String, itemClass: String = Keychain.defaultItemClass) throws {
 		var query = baseQuery
 //		query[kSecAttrServer] = url.absoluteString
-		query[kSecAttrService] = url.absoluteString
+		query[kSecAttrService] = key
 //		query[kSecAttrApplicationTag] = applicationTag(for: url)
 		query[kSecClass] = itemClass
 
@@ -161,7 +161,7 @@ public final class Keychain {
 		}
 
 		let urls: [URL] = dict.compactMap {
-			guard let string = $0[kSecAttrLabel as String] as? String else { return nil }
+			guard let string = $0[kSecAttrService as String] as? String else { return nil }
 			return URL(string: string)
 		}
 
