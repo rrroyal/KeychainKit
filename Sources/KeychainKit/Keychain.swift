@@ -48,7 +48,7 @@ public final class Keychain {
 		_ data: Data,
 		for key: String,
 		itemDescription: String? = nil,
-		itemClass: String = kSecClassGenericPassword as String
+		itemClass: String = Keychain.defaultItemClass
 	) throws {
 		var query = baseQuery
 		query[kSecClass] = itemClass
@@ -75,7 +75,7 @@ public final class Keychain {
 		_ string: String,
 		for key: String,
 		itemDescription: String? = nil,
-		itemClass: String = kSecClassGenericPassword as String
+		itemClass: String = Keychain.defaultItemClass
 	) throws {
 		guard let data = string.data(using: .utf8) else {
 			throw KeychainError.encodingFailed

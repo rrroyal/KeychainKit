@@ -7,19 +7,18 @@
 
 import Foundation
 
+// MARK: - Keychain+KeychainError
+
 public extension Keychain {
-	enum KeychainError: LocalizedError {
+	enum KeychainError: Error {
 		case encodingFailed
 		case decodingFailed
-
-		public var errorDescription: String? {
-			switch self {
-				case .encodingFailed: return "Encoding failed"
-				case .decodingFailed: return "Decoding failed"
-			}
-		}
 	}
+}
 
+// MARK: - Keychain+SecError
+
+public extension Keychain {
 	struct SecError: LocalizedError {
 		public let status: OSStatus
 
