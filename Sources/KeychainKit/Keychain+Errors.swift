@@ -10,7 +10,7 @@ import Foundation
 // MARK: - Keychain+KeychainError
 
 public extension Keychain {
-	enum KeychainError: Error {
+	enum KeychainError: Error, Sendable {
 		case encodingFailed
 		case decodingFailed
 	}
@@ -19,7 +19,7 @@ public extension Keychain {
 // MARK: - Keychain+SecError
 
 public extension Keychain {
-	struct SecError: LocalizedError {
+	struct SecError: LocalizedError, Sendable {
 		public let status: OSStatus
 
 		public var errorDescription: String? {

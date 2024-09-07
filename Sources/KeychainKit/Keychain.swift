@@ -8,8 +8,8 @@
 import Foundation
 import Security
 
-public final class Keychain {
-	private typealias QueryDictionary = [CFString: Any]
+public final class Keychain: Sendable {
+	private typealias QueryDictionary = [String: Any]
 
 	public static let defaultItemClass = kSecClassGenericPassword as String
 	//	public static let defaultStringEncoding: String.Encoding = .utf8
@@ -17,7 +17,7 @@ public final class Keychain {
 	public let accessGroup: String
 	// public var applicationTagPrefix: String?
 
-	private let baseQuery: QueryDictionary
+	private nonisolated(unsafe) let baseQuery: QueryDictionary
 
 	// MARK: - init
 
@@ -28,9 +28,9 @@ public final class Keychain {
 		self.accessGroup = accessGroup
 
 		self.baseQuery = [
-			kSecAttrAccessGroup: accessGroup,
-			kSecAttrSynchronizable: true,
-			kSecAttrAccessible: kSecAttrAccessibleAfterFirstUnlock,
+			kSecAttrAccessGroup as String: accessGroup,
+			kSecAttrSynchronizable as String: true,
+			kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock,
 		]
 	}
 
@@ -51,13 +51,13 @@ public final class Keychain {
 		itemClass: String = Keychain.defaultItemClass
 	) throws {
 		var query = baseQuery
-		query[kSecClass] = itemClass
-		query[kSecAttrService] = key
-		query[kSecAttrLabel] = key
-		query[kSecAttrDescription] = itemDescription
+		query[kSecClass as String] = itemClass
+		query[kSecAttrService as String] = key
+		query[kSecAttrLabel as String] = key
+		query[kSecAttrDescription as String] = itemDescription
 
 		let attributes: QueryDictionary = [
-			kSecValueData: data,
+			kSecValueData as String: data,
 //			kSecAttrLabel: key,
 		]
 
@@ -92,11 +92,11 @@ public final class Keychain {
 	/// - Returns: Saved data
 	public func getData(for key: String, itemClass: String = Keychain.defaultItemClass) throws -> Data {
 		var query = baseQuery
-		query[kSecClass] = itemClass
-		query[kSecAttrService] = key
-//		query[kSecAttrLabel] = key
-		query[kSecMatchLimit] = kSecMatchLimitOne
-		query[kSecReturnData] = true
+		query[kSecClass as String] = itemClass
+		query[kSecAttrService as String] = key
+//		query[kSecAttrLabel as String] = key
+		query[kSecMatchLimit as String] = kSecMatchLimitOne
+		query[kSecReturnData as String] = true
 
 		var _data: CFTypeRef?
 		let status = SecItemCopyMatching(query as CFDictionary, &_data)
@@ -131,10 +131,10 @@ public final class Keychain {
 	///   - itemClass: Keychain item class
 	public func removeContent(for key: String, itemClass: String = Keychain.defaultItemClass) throws {
 		var query = baseQuery
-//		query[kSecAttrServer] = url.absoluteString
-		query[kSecAttrService] = key
-//		query[kSecAttrApplicationTag] = applicationTag(for: url)
-		query[kSecClass] = itemClass
+//		query[kSecAttrServer as String] = url.absoluteString
+		query[kSecAttrService as String] = key
+//		query[kSecAttrApplicationTag as String] = applicationTag(for: url)
+		query[kSecClass as String] = itemClass
 
 		let status = SecItemDelete(query as CFDictionary)
 		guard status == errSecSuccess || status == errSecItemNotFound else { throw SecError(status) }
@@ -145,10 +145,10 @@ public final class Keychain {
 	/// - Returns: Array of URLs
 	public func getSavedURLs(itemClass: String = Keychain.defaultItemClass) throws -> [URL] {
 		var query = baseQuery
-		query[kSecMatchLimit] = kSecMatchLimitAll
-		query[kSecReturnAttributes] = true
-		query[kSecReturnData] = false
-		query[kSecClass] = itemClass
+		query[kSecMatchLimit as String] = kSecMatchLimitAll
+		query[kSecReturnAttributes as String] = true
+		query[kSecReturnData as String] = false
+		query[kSecClass as String] = itemClass
 
 		var item: CFTypeRef?
 		let status = SecItemCopyMatching(query as CFDictionary, &item)
