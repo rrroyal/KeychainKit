@@ -70,7 +70,6 @@ public final class Keychain: Sendable {
 	///   - key: Item key
 	///   - itemDescription: Keychain item description
 	///   - itemClass: Keychain item class
-	@inlinable
 	public func setString(
 		_ string: String,
 		for key: String,
@@ -116,7 +115,6 @@ public final class Keychain: Sendable {
 	///   - key: Item key
 	///   - itemClass: Keychain item class
 	/// - Returns: Saved string
-	@inlinable
 	public func getString(for key: String, itemClass: String = Keychain.defaultItemClass) throws -> String {
 		let data = try getData(for: key, itemClass: itemClass)
 		guard let string = String(data: data, encoding: .utf8) else {
